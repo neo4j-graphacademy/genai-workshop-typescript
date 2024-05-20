@@ -20,10 +20,49 @@ ul li {
     list-style-type: disc;
 }
 
-pre {
+pre, code {
     border: 1px solid;
     border-color: rgba(0, 0, 0, .1);;
-    background: rgba(0, 0, 0, .02);
+    background: rgba(255, 255, 255, .1);
     padding: 6px;
     border-radius: 4px;
+}
+
+.message p {
+    margin-bottom: 12px;
+}
+.message ul, .message ol {
+    margin-bottom: 18px;
+}
+.message p:last-child {
+    margin-bottom: 0;
+}
+strong, bold {
+    font-weight: bold;
+}
+
+.message blockquote {
+    border-left: 3px solid;
+    border-color: rgba(0, 0, 0, .1);;
+    background: rgba(255, 255, 255, .1);
+    margin: 12px;
+    padding-left: 12px;
+    font-style: italic;
+}
+
+.message h1 {
+    font-size: 1.4em;
+    font-weight: bold;
+    margin: 16px 0 12px;
+}
+
+.message h2 {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin: 16px 0 12px;
+}
+.message h3 {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 16px 0 12px;
 }

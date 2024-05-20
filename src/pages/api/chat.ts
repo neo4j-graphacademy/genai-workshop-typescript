@@ -39,7 +39,7 @@ export default async function handler(
       });
     } catch (e: any) {
       res.status(500).json({
-        message: `I'm suffering from brain fog...\n\n${e.message}`,
+        message: `**I'm suffering from brain fog...**\n\n${e.message}`,
       });
     }
   } else {

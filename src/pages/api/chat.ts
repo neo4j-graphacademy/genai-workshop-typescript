@@ -1,4 +1,5 @@
 import { call } from "@/modules/agent";
+import { detectCommand } from "@/modules/agent/commands";
 import { randomUUID } from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 
@@ -32,14 +33,20 @@ export default async function handler(
     const sessionId = getSessionId(req, res);
 
     try {
+      const cmd = await detectCommand(message, sessionId);
+      if (cmd) {
+        return cmd;
+      }
       const result = await call(message, sessionId);
 
       res.status(201).json({
         message: result,
       });
     } catch (e: any) {
+      console.log(e);
+
       res.status(500).json({
-        message: `**I'm suffering from brain fog...**\n\n${e.message}`,
+        message: `**I'm suffering from brain fog...**\n\n${e.message}\n\`\`\`\n${e.stack}\n\`\`\``,
       });
     }
   } else {

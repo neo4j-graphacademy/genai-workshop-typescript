@@ -3,6 +3,7 @@ import {
   FormEvent,
   KeyboardEventHandler,
   RefObject,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -53,20 +54,23 @@ export default function Form({
     }
   };
 
-  window.addEventListener('keydown', (event) => {
-    const messages: Record<string, string> = {
-      'º': '/clear',
-      '¡': 'Can you recommend a meetup about',
-    }
+  useEffect(() => {
+    typeof window !== "undefined" &&
+      window.addEventListener("keydown", (event) => {
+        const messages: Record<
+          string,
+          string
+        > = require("../../shortcuts.json");
 
-    if (input.current && event.altKey) {
-      event.preventDefault()
-      if (messages[ event.key ]) {
-        input.current.value = messages[ event.key ]
-        input.current.focus()
-      }
-    }
-  })
+        if (input.current && event.altKey) {
+          event.preventDefault();
+          if (messages[event.key]) {
+            input.current.value = messages[event.key];
+            input.current.focus();
+          }
+        }
+      });
+  }, []);
 
   return (
     <form

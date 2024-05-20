@@ -1,10 +1,11 @@
+import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { initGraph } from "../graph";
 
 type UnpersistedChatbotResponse = {
   input: string;
   rephrasedQuestion: string;
   output: string;
-  cypher: string | undefined;
+  cypher: string | null | undefined;
 };
 
 export type ChatbotResponse = UnpersistedChatbotResponse & {
@@ -29,12 +30,40 @@ export async function clearHistory(sessionId: string): Promise<void> {
 export async function getHistory(
   sessionId: string,
   limit: number = 5
-): Promise<ChatbotResponse[]> {
-  // TODO: Execute the Cypher statement from /cypher/get-history.cypher in a read transaction
-  // TODO: Use string templating to make the limit dynamic: 0..${limit}
-  // const graph = await initGraph()
-  // const res = await graph.query<ChatbotResponse>(cypher, { sessionId }, "READ")
-  // return res
+): Promise<BaseMessage[]> {
+  // tag::gettx[]
+  const graph = await initGraph();
+  const res = await graph.query<ChatbotResponse>(
+    `
+      MATCH (:Session {id: $sessionId})-[:LAST_RESPONSE]->(last)
+      MATCH path = (start)-[:NEXT*0..${limit}]->(last)
+      WHERE length(path) = 5 OR NOT EXISTS { ()-[:NEXT]->(start) }
+      UNWIND nodes(path) AS response
+      RETURN response.id AS id,
+        response.input AS input,
+        response.rephrasedQuestion AS rephrasedQuestion,
+        response.output AS output,
+        response.cypher AS cypher,
+        response.createdAt AS createdAt,
+        [ (response)-[:CONTEXT]->(n) | elementId(n) ] AS context
+    `,
+    { sessionId },
+    "READ"
+  );
+  // end::gettx[]
+
+  // tag::getreturn[]
+  const output: BaseMessage[] = [];
+
+  if (res) {
+    for (const row of res) {
+      output.push(new HumanMessage(row.input));
+      output.push(new AIMessage(row.output));
+    }
+  }
+
+  return output;
+  // end::getreturn[]
 }
 // end::get[]
 
@@ -53,16 +82,77 @@ export async function getHistory(
  */
 export async function saveHistory(
   sessionId: string,
-  source: string,
   input: string,
-  rephrasedQuestion: string,
   output: string,
-  ids: string[],
+  ids: string[] = [],
   cypher: string | null = null
 ): Promise<string> {
-  // TODO: Execute the Cypher statement from /cypher/save-response.cypher in a write transaction
-  // const graph = await initGraph()
-  // const res = await graph.query<{id: string}>(cypher, params, "WRITE")
-  // return res[0].id
+  // tag::savetx[]
+  const graph = await initGraph();
+  const res = await graph.query<{ id: string }>(
+    `
+    MERGE (session:Session { id: $sessionId }) // <1>
+
+    // <2> Create new response
+    CREATE (response:Response {
+      id: randomUuid(),
+      createdAt: datetime(),
+      source: $source,
+      input: $input,
+      output: $output,
+      rephrasedQuestion: $rephrasedQuestion,
+      cypher: $cypher,
+      ids: $ids
+    })
+    CREATE (session)-[:HAS_RESPONSE]->(response)
+
+    WITH session, response
+
+    CALL {
+    WITH session, response
+
+      // <3> Remove existing :LAST_RESPONSE relationship if it exists
+      MATCH (session)-[lrel:LAST_RESPONSE]->(last)
+      DELETE lrel
+
+      // <4? Create :NEXT relationship
+      CREATE (last)-[:NEXT]->(response)
+    }
+
+
+    // <5> Create new :LAST_RESPONSE relationship
+    CREATE (session)-[:LAST_RESPONSE]->(response)
+
+    // <6> Create relationship to context nodes
+    WITH response
+
+    CALL {
+      WITH response
+      UNWIND $ids AS id
+      MATCH (context)
+      WHERE elementId(context) = id
+      CREATE (response)-[:CONTEXT]->(context)
+
+      RETURN count(*) AS count
+    }
+
+    RETURN DISTINCT response.id AS id
+  `,
+    {
+      sessionId,
+      source: null,
+      input,
+      output,
+      rephrasedQuestion: null,
+      cypher: cypher,
+      ids,
+    },
+    "WRITE"
+  );
+  // end::savetx[]
+
+  // tag::savereturn[]
+  return res && res.length ? res[0].id : "";
+  // end::savereturn[]
 }
 // end::save[]

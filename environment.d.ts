@@ -4,6 +4,7 @@ declare global {
       NEO4J_URI: string;
       NEO4J_USERNAME: string;
       NEO4J_PASSWORD: string;
+      OPENAI_API_KEY: string;
       NODE_ENV: "development" | "production";
       PORT?: string;
       PWD: string;

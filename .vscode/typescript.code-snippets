@@ -1,0 +1,79 @@
+{
+  "Initial Steps": {
+    "prefix": "steps",
+    "body": [
+      "// create a prompt template",
+      "$1",
+      "",
+      "// send to a LLM",
+      "$2",
+      "",
+      "// parse the response",
+      "$3",
+      ""
+    ],
+    "description": "Starter pseudocode"
+  },
+  "You are a helpful assistant": {
+    "prefix": ["helpfulassistant"],
+    "body": [
+      "`You are a helpful assistant.  Answer the user's question to the best of your ability.`"
+    ],
+    "description": "You are a helpful assistant"
+  },
+  "Here are some documents": {
+    "prefix": ["rag", "somedocuments"],
+    "body": [
+      "SystemMessagePromptTemplate.fromTemplate(`",
+      "\tHere are some documents to help you answer the question.",
+      "\tDon't use your pre-trained knowledge to answer the question.",
+      "\tAlways include a full link to the meetup.",
+      "\tIf the answer isn't included in the documents, say you don't know.",
+      "",
+      "\tDocuments:",
+      "\t{documents}",
+      "`)"
+    ],
+    "description": "You are a helpful assistant"
+  },
+  "Retrieval Query": {
+    "prefix": ["retrievalQuery"],
+    "body": [
+      "retrievalQuery: `",
+      "\tRETURN",
+      "\t\tnode.name +':\n'+ coalesce(node.description,'') AS text,",
+      "\t\tscore AS score,",
+      "\t\tnode {",
+      "\t\t\t.name, .rating, .urlname,",
+      "\t\t\turl: 'https://feetup.com/'+ node.urlname",
+      "\t\t} AS metadata",
+      "`,",
+    ],
+    "description": "Retrieve extra information as part of the document"
+  },
+  "Create Vector Store": {
+    "prefix": ["vectorstore"],
+    "body": [
+      "const store = await Neo4jVectorStore.fromExistingGraph(embeddings, {",
+      "\turl: process.env.NEO4J_URI,",
+      "\tusername: process.env.NEO4J_USERNAME,",
+      "\tpassword: process.env.NEO4J_PASSWORD,",
+      "\tnodeLabel: 'Group',",
+      "\ttextNodeProperties: ['name', 'description'],",
+      "\tindexName: 'group_embeddings',",
+      "\tembeddingNodeProperty: 'embedding',",
+      "\tretrievalQuery: `",
+      "\t\tRETURN",
+      "\t\t\tnode.name +':\\n'+ coalesce(node.description,'') AS text,",
+      "\t\t\tscore AS score,",
+      "\t\t\tnode {",
+      "\t\t\t\t.name, .rating, .urlname,",
+      "\t\t\t\turl: 'https://feetup.com/'+ node.urlname",
+      "\t\t\t\t} AS metadata",
+      "\t`,",
+      "});"
+    ],
+    "description": "Create a vector store"
+
+  }
+}

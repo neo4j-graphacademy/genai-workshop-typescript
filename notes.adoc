@@ -1,0 +1,36 @@
+= Notes
+
+== SETUP
+
+1. Ollama with models - llama3, nomic-embed-text
+   ```
+   ollama pull nomic-embed-text
+   ollama pull llama3
+   ```
+2. DB needs apoc
+
+== Ingest
+
+1. src/setup/index.mjs to create the index
+
+
+== Build
+
+1. Simple message in
+  -> LLM w ChatOllama
+  -> ChatPromptTemplate.fromMessages
+
+
+2. Add in memory
+  -> use getHistory and saveHistory
+  -> MessagesPlaceHolder
+  -> https://llama.meta.com/docs/model-cards-and-prompt-formats/meta-llama-3/
+
+
+3. RAG?
+  -> Embeddings
+  -> System prompt to use the context
+  -> Metadata
+
+4. Prompt engineering
+  -> Use URLs from data

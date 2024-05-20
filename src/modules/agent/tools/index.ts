@@ -5,7 +5,7 @@ import initCypherRetrievalChain from "./cypher/cypher-retrieval.chain";
 import initVectorRetrievalChain from "./vector-retrieval.chain";
 import { DynamicStructuredTool } from "@langchain/community/tools/dynamic";
 import { AgentToolInputSchema } from "../agent.types";
-import { RunnableConfig } from "langchain/runnables";
+import { RunnableConfig } from "@langchain/core/runnables";
 
 // tag::function[]
 export default async function initTools(

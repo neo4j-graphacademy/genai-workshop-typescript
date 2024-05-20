@@ -53,6 +53,21 @@ export default function Form({
     }
   };
 
+  window.addEventListener('keydown', (event) => {
+    const messages: Record<string, string> = {
+      'º': '/clear',
+      '¡': 'Can you recommend a meetup about',
+    }
+
+    if (input.current && event.altKey) {
+      event.preventDefault()
+      if (messages[ event.key ]) {
+        input.current.value = messages[ event.key ]
+        input.current.focus()
+      }
+    }
+  })
+
   return (
     <form
       className="border-t b-slate-200 p-4 bg-slate-100"

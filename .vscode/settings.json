@@ -28,5 +28,6 @@
   "editor.rulers": [120],
   "editor.wordWrapColumn": 120,
   "yaml.schemas": {},
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "asciidoc.antora.enableAntoraSupport": false
 }

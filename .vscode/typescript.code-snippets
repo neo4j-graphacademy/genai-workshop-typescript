@@ -2,14 +2,16 @@
   "Initial Steps": {
     "prefix": "steps",
     "body": [
-      "// create a prompt template",
+      "// 1. create a prompt template",
       "$1",
-      "",
-      "// send to a LLM",
+      "// 2. choose an LLM",
       "$2",
-      "",
-      "// parse the response",
+      "// 3. parse the response",
       "$3",
+      "// 4. runnable sequence (LCEL)",
+      "$4",
+      "// 5. invoke the chain",
+      "$5",
       ""
     ],
     "description": "Starter pseudocode"
@@ -17,12 +19,13 @@
   "You are a helpful assistant": {
     "prefix": ["helpfulassistant"],
     "body": [
-      "`You are a helpful assistant.  Answer the user's question to the best of your ability.`"
+      "`You are a helpful assistant.",
+      "Answer the user's question to the best of your ability.`"
     ],
     "description": "You are a helpful assistant"
   },
   "Here are some documents": {
-    "prefix": ["rag", "somedocuments"],
+    "prefix": ["rag", "somedocuments", "herearesomedocuments"],
     "body": [
       "SystemMessagePromptTemplate.fromTemplate(`",
       "\tHere are some documents to help you answer the question.",
@@ -51,6 +54,14 @@
     ],
     "description": "Retrieve extra information as part of the document"
   },
+  "Embeddings model": {
+    "prefix": ["embeddings", "constembeddings"],
+    "body": [
+      "const embeddings = new OllamaEmbeddings({",
+        "\tmodel: 'nomic-embed-text',",
+      "});",
+    ]
+  },
   "Create Vector Store": {
     "prefix": ["vectorstore"],
     "body": [
@@ -74,6 +85,31 @@
       "});"
     ],
     "description": "Create a vector store"
+  },
+  "LLM": {
+    "prefix": ["constllm"],
+    "body": "const llm = new ChatOpenAI($1)",
+    "description": "Create an LLM"
+  },
+  "OpenAI API KEY": {
+    "prefix": ["openaiapikey"],
+    "body": "process.env.OPENAI_API_KEY",
+    "description": "OpenAI API Key from process.env"
 
+  },
+  "Output Parser": {
+    "prefix": ["constparser"],
+    "body": "const parser = new StringOutputParser()",
+    "description": "Parse a string"
+  },
+  "Output": {
+    "prefix": ["constoutput"],
+    "body": "const output = await chain.invoke($1)",
+    "description": "Parse a string"
+  },
+  "Return": {
+    "prefix": ["returnoutput"],
+    "body": "return output",
+    "description": "return output"
   }
 }

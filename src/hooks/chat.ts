@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
-export type Message = {
+export type ChatMessage = {
   role: "human" | "ai";
   content: string;
 };
 
 export default function useChat() {
   const [thinking, setThinking] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "ai",
       content:

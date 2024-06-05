@@ -28,9 +28,13 @@ export async function clearHistory(sessionId: string): Promise<void> {
 
 // tag::get[]
 export async function getHistory(
-  sessionId: string,
+  sessionId: string | undefined,
   limit: number = 5
 ): Promise<BaseMessage[]> {
+  if (!sessionId) {
+    return [];
+  }
+
   // tag::gettx[]
   const graph = await initGraph();
   const res = await graph.query<ChatbotResponse>(

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "cross-env DOTENV_CONFIG_PATH=./.env.local jest",
+    "test:environment": "cross-env DOTENV_CONFIG_PATH=./.env.local jest environment",
     "test:watch": "cross-env DOTENV_CONFIG_PATH=./.env.local jest --watchAll --detectOpenHandles"
   },
   "dependencies": {

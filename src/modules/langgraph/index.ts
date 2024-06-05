@@ -108,6 +108,7 @@ export async function buildGraph() {
       value: (x, y) => y,
       default: () => undefined,
     },
+    output: null,
   };
 
   interface AgentStateBase {
@@ -115,6 +116,7 @@ export async function buildGraph() {
     rephrased: string;
     agentOutcome?: AgentAction | AgentFinish;
     steps: Array<AgentStep>;
+    output: string;
   }
 
   interface AgentState extends AgentStateBase {
@@ -122,6 +124,7 @@ export async function buildGraph() {
     chatHistory?: BaseMessage[];
   }
 
+  // Create a Tool Executor
   const toolExecutor = new ToolExecutor({
     tools,
   });
@@ -137,7 +140,9 @@ export async function buildGraph() {
   const runAgent = async (data: AgentState, config?: RunnableConfig) => {
     console.log("runAgent", { data });
 
+    // Decide which tool to run
     const agentOutcome = await agentRunnable.invoke(data, config);
+
     return {
       agentOutcome,
     };
@@ -148,6 +153,7 @@ export async function buildGraph() {
     if (!agentAction || "returnValues" in agentAction) {
       throw new Error("Agent has not been run yet");
     }
+    // Execute the tool
     const output = await toolExecutor.invoke(agentAction, config);
     return {
       steps: [{ action: agentAction, observation: JSON.stringify(output) }],
@@ -160,28 +166,23 @@ export async function buildGraph() {
   ) => {
     const history = await getHistory(config?.configurable?.sessionId, 5);
 
-    const rephrasePrompt = PromptTemplate.fromTemplate(`
-      Use the following conversation history to rephrase the input
-      into a standalone question.
+    const rephrase = ChatPromptTemplate.fromMessages([
+      SystemMessagePromptTemplate.fromTemplate(`
+        Use the following conversation history to rephrase the input
+        into a standalone question.
+      `),
+      new MessagesPlaceholder("history"),
+      HumanMessagePromptTemplate.fromTemplate(`Input: {input}`),
+    ]);
 
-      Conversation History:
-      ----
-      {history}
-      ----
-
-      Input:
-      ----
-      {input}
-      ----
-    `);
-
-    const rephraseChain = RunnableSequence.from<
-      { history: string; input: string },
-      string
-    >([rephrasePrompt, llm, new StringOutputParser()]);
+    const rephraseChain = RunnableSequence.from([
+      rephrase,
+      llm,
+      new StringOutputParser(),
+    ]);
 
     const rephrased = await rephraseChain.invoke({
-      history: history.map((el) => el.toJSON()).join("\n"),
+      history,
       input: data.input,
     });
 
@@ -281,6 +282,8 @@ export async function buildGraph() {
     )
     .addEdge("action", "agent");
 
+  await workflow.validate();
+
   return workflow.compile();
 }
 
@@ -295,7 +298,5 @@ export async function call(input: string): Promise<string> {
   }
 
   const res = await agent.invoke({ input });
-  console.log(res);
-
   return res.agentOutcome.returnValues.output;
 }

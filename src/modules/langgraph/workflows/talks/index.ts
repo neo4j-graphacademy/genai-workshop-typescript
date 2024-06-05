@@ -16,10 +16,13 @@ import {
 } from "@langchain/core/runnables";
 import { DynamicStructuredTool } from "langchain/tools";
 
-async function initRetrievalChain() {
+export async function initRetrievalChain() {
+  // Specify embedding model
   const embeddings = new OpenAIEmbeddings({
     openAIApiKey: process.env.OPEN_AI_API_KEY,
   });
+
+  // Create vector store
   const store = await Neo4jVectorStore.fromExistingGraph(embeddings, {
     url: process.env.NEO4J_URI,
     username: process.env.NEO4J_USERNAME,
@@ -43,6 +46,8 @@ node {
 } AS metadata
 `,
   });
+
+  // Retrieve Documents from Vector Index
   const retriever = store.asRetriever();
 
   // 1. create a prompt template

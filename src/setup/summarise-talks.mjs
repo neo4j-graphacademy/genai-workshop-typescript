@@ -8,7 +8,6 @@ import {
   RunnableSequence,
 } from "@langchain/core/runnables";
 import { z } from "zod";
-
 import { config } from "dotenv";
 
 async function getTalkUrls() {
@@ -22,7 +21,7 @@ async function getTalkUrls() {
     .filter((el, index, data) => data.indexOf(el) === index);
 }
 
-async function getTalkInformation(url) {
+async function extractTalkInformation(url) {
   const res = await fetch(`https://athens.cityjsconf.org${url}`);
   const html = await res.text();
 
@@ -72,7 +71,7 @@ async function getTalkInformation(url) {
 
   const llm = new OpenAI({
     openAIApiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o",
+    model: "gpt-4-turbo",
   });
 
   const summarise_chain = RunnableSequence.from([
@@ -105,7 +104,7 @@ async function main() {
 
   for (const talk of talks) {
     try {
-      const info = await getTalkInformation(talk);
+      const info = await extractTalkInformation(talk);
 
       await graph.query(
         `
@@ -126,7 +125,8 @@ async function main() {
             MERGE (t)-[:HAS_TAG]->(tg)
         )
       `,
-        { talk, info }
+        { talk, info },
+        "WRITE"
       );
 
       details.push(info);
@@ -138,6 +138,9 @@ async function main() {
     }
   }
 
+  await graph.close();
+
+  console.log(`Loaded ${details.length} talks`);
   console.log(errors);
 }
 

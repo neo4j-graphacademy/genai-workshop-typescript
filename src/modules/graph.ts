@@ -21,6 +21,7 @@ export async function initGraph(): Promise<Neo4jGraph> {
       username: process.env.NEO4J_USERNAME as string,
       password: process.env.NEO4J_PASSWORD as string,
       database: process.env.NEO4J_DATABASE as string | undefined,
+      enhancedSchema: true,
     });
   }
   // end::create[]

@@ -13,3 +13,5 @@ export const NODE_ROUTER = "router";
 export const NODE_TALK_RETRIEVER = "talk";
 export const NODE_DATABASE_QUERY = "database";
 export const NODE_JOKE = "joke";
+export const NODE_SPEAKER_RETRIEVER = "speakers";
+export const NODE_WEATHER_INFO = "weatker";

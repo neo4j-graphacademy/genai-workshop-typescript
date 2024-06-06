@@ -1,0 +1,113 @@
+import { ChatOpenAI } from "@langchain/openai";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import initAgent from "./agent";
+import { initGraph } from "../graph";
+import { sleep } from "@/utils";
+import {
+  ChatPromptTemplate,
+  HumanMessagePromptTemplate,
+  MessagesPlaceholder,
+  SystemMessagePromptTemplate,
+} from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import { RunnablePassthrough, RunnableSequence } from "@langchain/core/runnables";
+import { clearHistory, getHistory, saveHistory } from "./history";
+import { OllamaEmbeddings } from "@langchain/community/embeddings/ollama";
+import { Neo4jVectorStore } from "@langchain/community/vectorstores/neo4j_vector";
+import { Document } from "langchain/document";
+import { ChatOllama } from "langchain/chat_models/ollama";
+
+Document;
+
+// tag::call[]
+export async function call(input: string, sessionId: string): Promise<string> {
+  if (input === "/clear" || input === "/c") {
+    await clearHistory(sessionId);
+
+    return "👌";
+  }
+
+  // TODO: Replace this code with an agent
+  await sleep(2000);
+  // return input
+
+  // -- keep above ^^^
+
+  // create a prompt template
+  const prompt = ChatPromptTemplate.fromMessages([
+    SystemMessagePromptTemplate.fromTemplate(
+      `You are a helpful assistant.  Answer the users question to the best of your ability`
+    ),
+    new MessagesPlaceholder("history"),
+    SystemMessagePromptTemplate.fromTemplate(
+      `Here are some documents to help you answer the question.
+      Don't use your pre-trained knowledge to answer the question.
+      Always include a full link to the meetup.
+      If the answer isn't included in the documents, say you don't know.
+
+Documents:
+{documents}
+      `
+    ),
+    HumanMessagePromptTemplate.fromTemplate("Question: {input}"),
+  ]);
+
+  // send to a LLM
+  // const llm = new ChatOpenAI({
+  //   openAIApiKey: process.env.OPENAI_API_KEY,
+  // });
+  const llm = new ChatOllama({ model: "llama3" });
+
+  // parse the response
+  const parser = new StringOutputParser();
+
+  // embedding model
+
+  const embeddings = new OllamaEmbeddings({
+    model: "nomic-embed-text",
+  });
+
+  const store = await Neo4jVectorStore.fromExistingGraph(embeddings, {
+    url: process.env.NEO4J_URI,
+    username: process.env.NEO4J_USERNAME,
+    password: process.env.NEO4J_PASSWORD,
+    nodeLabel: "Group",
+    textNodeProperties: ["name", "description"],
+    indexName: "group_embeddings",
+    embeddingNodeProperty: "embedding",
+    retrievalQuery: `
+    RETURN
+      node.name +':\n'+ coalesce(node.description,'') AS text,
+      score AS score,
+      node {
+        .name, .rating, .urlname,
+        url: 'https://feetup.com/'+ node.urlname
+        } AS metadata
+  `,
+  });
+
+  // use vector store as a retriever
+  const retriever = store.asRetriever(1);
+
+  // create a chain
+  const chain = RunnableSequence.from<{ input: string }, string>([
+    RunnablePassthrough.assign({
+      history: (args, config) => getHistory(config?.configurable.sessionId, 5),
+      documents: RunnableSequence.from([
+        (args) => args.input,
+        retriever.pipe((docs) => JSON.stringify(docs)),
+      ]),
+    }),
+    prompt,
+    llm,
+    parser,
+  ]);
+
+  const output = await chain.invoke({ input }, { configurable: { sessionId } });
+
+  // Save history
+  await saveHistory(sessionId, input, output);
+
+  return output;
+}
+// end::call[]

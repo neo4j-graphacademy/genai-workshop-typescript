@@ -1,18 +1,23 @@
 import { BaseMessage } from "@langchain/core/messages";
 import { END, START, StateGraph, StateGraphArgs } from "@langchain/langgraph";
 import { ChatOpenAI } from "@langchain/openai";
-import { AgentState } from "./constants";
+
 import { rephraseQuestion } from "./nodes/rephrase";
 import { router } from "./nodes/router";
 import {
+  AgentState,
+  NODE_SPEAKER_RETRIEVER,
+  NODE_WEATHER_INFO,
   NODE_DATABASE_QUERY,
   NODE_JOKE,
   NODE_REPHRASE,
   NODE_TALK_RETRIEVER,
 } from "./constants";
-import { initRetrievalChain } from "./workflows/talks";
-import { initCypherQAChain } from "./workflows/database";
+import { initTalksRetrievalChain } from "./nodes/talks";
+import { initSpeakerRetrievalChain } from "./nodes/speakers";
+import { initCypherQAChain } from "./nodes/database";
 import { tellJoke } from "./nodes/joke";
+import { weatherForecast } from "./nodes/weather";
 
 const agentState: StateGraphArgs<AgentState>["channels"] = {
   input: null,
@@ -25,13 +30,9 @@ const agentState: StateGraphArgs<AgentState>["channels"] = {
   },
 };
 
-/**
-- router
-- conditional:
- */
-
-export async function buildLangGraphAgent() {
-  const talkChain = await initRetrievalChain();
+export async function buildAgentWorkflow() {
+  const talkChain = await initTalksRetrievalChain();
+  const speakerChain = await initSpeakerRetrievalChain();
   const databaseChain = await initCypherQAChain();
 
   const model = new ChatOpenAI({
@@ -69,17 +70,20 @@ export async function buildLangGraphAgent() {
 
     // 5. Tell a joke
     .addNode(NODE_JOKE, tellJoke)
-    .addEdge(NODE_JOKE, END);
+    .addEdge(NODE_JOKE, END)
+
+    // Speaker info
+    .addNode(NODE_SPEAKER_RETRIEVER, async (data: AgentState) => {
+      const output = await speakerChain.invoke({ message: data.input });
+      return { output };
+    })
+    .addEdge(NODE_SPEAKER_RETRIEVER, END)
+
+    // Weather
+    .addNode(NODE_WEATHER_INFO, weatherForecast)
+    .addEdge(NODE_WEATHER_INFO, END);
 
   const app = await graph.compile();
 
   return app;
-}
-
-export async function call(input: string, sessionId?: string) {
-  const agent = await buildLangGraphAgent();
-
-  const res = await agent.invoke({ input }, { configurable: { sessionId } });
-
-  return res.output;
 }

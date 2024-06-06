@@ -1,9 +1,16 @@
 import { sleep } from "@/utils";
 import { detectCommand } from "./commands";
+import { buildAgentWorkflow } from "./agent-workflow";
 
 type RunInput = {
   message: string;
 };
+
+// TODO: This needs to be exportable
+type CompiledStateGraph = any;
+
+// TODO: Update
+let agent: CompiledStateGraph;
 
 // tag::call[]
 export async function call(
@@ -17,8 +24,23 @@ export async function call(
     return command;
   }
 
-  await sleep(1000);
+  // Singleton agent
+  if (agent === undefined) {
+    agent = await buildAgentWorkflow();
+  }
 
-  return message;
+  // Output
+  const output = await agent.invoke(
+    {
+      message,
+    },
+    {
+      configurable: {
+        sessionId,
+      },
+    }
+  );
+
+  return output;
 }
 // end::call[]

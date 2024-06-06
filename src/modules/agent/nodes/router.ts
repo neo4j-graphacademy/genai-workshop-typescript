@@ -1,5 +1,9 @@
 import { RunnableConfig } from "@langchain/core/runnables";
-import { AgentState } from "../constants";
+import {
+  AgentState,
+  NODE_SPEAKER_RETRIEVER,
+  NODE_WEATHER_INFO,
+} from "../constants";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { z } from "zod";
 import { PromptTemplate } from "@langchain/core/prompts";
@@ -18,8 +22,10 @@ export const router = async (data: AgentState, config?: RunnableConfig) => {
 
     * If the question relates to the description of a talk and can be answered with
     the contents of the talk title or description, respond with "${NODE_TALK_RETRIEVER}"
-    * If the question relates to Talks, Spekaers and can be answered by a database
+    * For details about a speaker based on their name or bio, respond with "${NODE_SPEAKER_RETRIEVER}"
+    * If the question relates to Talks, Speakers and can be answered by a database
     query, respond with "${NODE_DATABASE_QUERY}".
+    * For the weather, respond with "${NODE_WEATHER_INFO}".
     * For all other queries, respond with "${NODE_JOKE}".
 
     Question: {question}
@@ -30,7 +36,13 @@ export const router = async (data: AgentState, config?: RunnableConfig) => {
     openAIApiKey: process.env.OPENAI_API_KEY,
   });
   const parser = StructuredOutputParser.fromZodSchema(
-    z.enum([NODE_TALK_RETRIEVER, NODE_DATABASE_QUERY, NODE_JOKE])
+    z.enum([
+      NODE_TALK_RETRIEVER,
+      NODE_DATABASE_QUERY,
+      NODE_JOKE,
+      NODE_WEATHER_INFO,
+      NODE_SPEAKER_RETRIEVER,
+    ])
   );
 
   const chain = prompt.pipe(llm).pipe(parser);

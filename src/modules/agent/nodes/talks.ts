@@ -16,7 +16,7 @@ import {
 } from "@langchain/core/runnables";
 import { DynamicStructuredTool } from "langchain/tools";
 
-export async function initRetrievalChain() {
+export async function initTalksRetrievalChain() {
   // Specify embedding model
   const embeddings = new OpenAIEmbeddings({
     openAIApiKey: process.env.OPEN_AI_API_KEY,
